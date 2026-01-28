@@ -7,8 +7,8 @@ app = FastAPI()
 
 # --- CONFIGURACIÓN ---
 # ¡Peguen aquí sus credenciales de Supabase!
-SUPABASE_URL = "TU_SUPABASE_URL_AQUI"
-SUPABASE_KEY = "TU_SUPABASE_KEY_AQUI"
+SUPABASE_URL = "https://tjzryawsqbhhwvkfquzb.supabase.co"
+SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqenJ5YXdzcWJoaHd2a2ZxdXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MzUyODgsImV4cCI6MjA4NTAxMTI4OH0.Ota6MKcgHmdAVAiCCXZ0zjVqb7Qz5IS5Vddal3V8I4s"
 
 # Conectamos con la base de datos
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)

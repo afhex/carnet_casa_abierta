@@ -34,3 +34,9 @@ coverage
 
 # Vitest
 __screenshots__/
+
+# Python
+.env
+__pycache__/
+venv/
+*.pyc
