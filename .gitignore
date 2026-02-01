@@ -35,8 +35,6 @@ coverage
 # Vitest
 __screenshots__/
 
-# Python
-.env
-__pycache__/
-venv/
-*.pyc
+backend/uploads/
+backend/history.json
+backend/.venv/
