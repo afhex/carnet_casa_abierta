@@ -1,22 +1,29 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
-from supabase import create_client, Client
+from fastapi.responses import JSONResponse
+import os
+import shutil
+import json
+from datetime import datetime
 import random
+import base64
+from io import BytesIO
+from PIL import Image, ImageDraw, ImageFont
 
 app = FastAPI()
 
 # --- CONFIGURACIÓN ---
-# ¡Peguen aquí sus credenciales de Supabase!
-SUPABASE_URL = "https://tjzryawsqbhhwvkfquzb.supabase.co"
-SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRqenJ5YXdzcWJoaHd2a2ZxdXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njk0MzUyODgsImV4cCI6MjA4NTAxMTI4OH0.Ota6MKcgHmdAVAiCCXZ0zjVqb7Qz5IS5Vddal3V8I4s"
+UPLOAD_DIR = "uploads"
+HISTORY_FILE = "history.json"
 
-# Conectamos con la base de datos
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Asegurar directorios
+if not os.path.exists(UPLOAD_DIR):
+    os.makedirs(UPLOAD_DIR)
 
-# Configuración de seguridad (CORS) para que Vue pueda hablar con Python
+# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # En producción esto se restringe, para la casa abierta déjalo así
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -24,48 +31,76 @@ app.add_middleware(
 
 @app.get("/")
 def read_root():
-    return {"status": "El cerebro de IA está activo 🧠"}
+    return {"status": "Backend Simulado Activo 🧠 (Modo Local)"}
+
+def guardar_historial(datos):
+    """Guarda el análisis en un JSON local."""
+    historial = []
+    if os.path.exists(HISTORY_FILE):
+        try:
+            with open(HISTORY_FILE, "r") as f:
+                historial = json.load(f)
+        except json.JSONDecodeError:
+            pass
+    
+    # Inicia el historial si está vacío
+    if not isinstance(historial, list):
+        historial = []
+
+    historial.insert(0, datos) # Agregar al inicio
+    
+    with open(HISTORY_FILE, "w") as f:
+        json.dump(historial, f, indent=2)
+
+def generar_imagen_mock(ancho=400, alto=400):
+    """Genera una imagen placeholder con Pillow para simular IA."""
+    img = Image.new('RGB', (ancho, alto), color = (73, 109, 137))
+    d = ImageDraw.Draw(img)
+    d.text((10,10), "Simulacion AI", fill=(255,255,0))
+    
+    buffered = BytesIO()
+    img.save(buffered, format="PNG")
+    img_str = base64.b64encode(buffered.getvalue()).decode()
+    return f"data:image/png;base64,{img_str}"
 
 @app.post("/analizar")
 async def analizar_rostro(file: UploadFile = File(...)):
-    """
-    1. Recibe la foto desde Vue.
-    2. (Próximamente) Analiza con IA real.
-    3. Guarda en Supabase.
-    4. Devuelve recomendación.
-    """
-    print(f"📸 Recibida imagen: {file.filename}")
-
-    # --- ZONA DE SIMULACIÓN DE IA (Semana 1) ---
-    # Aquí irá MediaPipe después. Por ahora, inventamos datos para probar el flujo.
-    opciones_rostro = ["Ovalado", "Cuadrado", "Redondo", "Diamante"]
-    opciones_corte = ["Fade Bajo", "Pompadour", "Buzz Cut", "Mullet Moderno"]
-    
-    rostro_detectado = random.choice(opciones_rostro)
-    corte_sugerido = random.choice(opciones_corte)
-    emocion = "Sorprendido" # Esto también lo detectará la IA luego
-    
-    # URL falsa por ahora (luego vendrá de Replicate)
-    url_fake = "https://placehold.co/600x400?text=Corte+Generado+por+IA"
-
-    # --- GUARDAR EN SUPABASE (Gestión de Data) ---
-    datos_para_guardar = {
-        "tipo_rostro": rostro_detectado,
-        "corte_recomendado": corte_sugerido,
-        "emocion_detectada": emocion,
-        "genero_detectado": "Masculino", # Placeholder
-        "imagen_generada_url": url_fake
-    }
-
     try:
-        # Insertamos en la tabla que creaste
-        data = supabase.table("historial_biometrico").insert(datos_para_guardar).execute()
-        print("✅ Datos guardados en Supabase con éxito")
-    except Exception as e:
-        print(f"❌ Error guardando en Supabase: {e}")
+        # 1. Guardar Imagen Localmente
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_{file.filename}"
+        file_path = os.path.join(UPLOAD_DIR, filename)
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        print(f"📸 Imagen guardada en: {file_path}")
 
-    # --- RESPONDER A VUE ---
-    return {
-        "mensaje": "Análisis completado",
-        "datos": datos_para_guardar
-    }
+        # 2. Análisis Simulado (Aquí iría MediaPipe)
+        opciones_rostro = ["Ovalado", "Redondo", "Cuadrado", "Corazon"]
+        opciones_corte = ["Fade Medio", "Pompadour", "Buzz Cut", "Crop Top"]
+        opciones_emocion = ["Feliz", "Serio", "Sorprendido", "Neutro"]
+        opciones_genero = ["Masculino", "Femenino"]
+        
+        datos_analisis = {
+            "timestamp": timestamp,
+            "filename": filename,
+            "tipo_rostro": random.choice(opciones_rostro),
+            "corte_recomendado": random.choice(opciones_corte),
+            "emocion_detectada": random.choice(opciones_emocion),
+            "genero_detectado": random.choice(opciones_genero),
+            "imagen_generada_url": generar_imagen_mock() # Devuelve base64
+        }
+        
+        # 3. Guardar en Historial
+        guardar_historial(datos_analisis)
+        print("✅ Análisis registrado en history.json")
+
+        return {
+            "mensaje": "Análisis completado (Modo Local)",
+            "datos": datos_analisis
+        }
+
+    except Exception as e:
+        print(f"❌ Error en backend: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
