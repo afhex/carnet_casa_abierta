@@ -18,6 +18,7 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
+.env
 *.suo
 *.ntvs*
 *.njsproj
@@ -35,9 +36,10 @@ coverage
 # Vitest
 __screenshots__/
 
-# Python
-.env
+backend/uploads/
+backend/history.json
+backend/.venv/
+
 __pycache__/
-venv/
 *.pyc
-backend/main.py
+
