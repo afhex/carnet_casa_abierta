@@ -1,47 +1,159 @@
-# Carnet Casa Abierta
+# 💇‍♂️ Casa Abierta - Análisis Biométrico de Cortes de Cabello
 
-This template should help get you started developing with Vue 3 in Vite.
+Aplicación fullstack que utiliza análisis biométrico de IA para recomendar cortes de cabello personalizados basados en la forma del rostro del usuario.
 
-## Recommended IDE Setup
+---
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 🎯 Características
 
-## Recommended Browser Setup
+- ✅ **Análisis biométrico** en tiempo real del tipo de rostro
+- ✅ **Recomendaciones inteligentes** de cortes basadas en geometría facial
+- ✅ **Interfaz moderna** y responsiva con Vue 3
+- ✅ **API RESTful** robusta con FastAPI
+- ✅ **Persistencia local** segura de datos
+- ✅ **Generación de QR** para compartir resultados
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+---
 
-## Customize configuration
+## 🛠️ Stack Tecnológico
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+### Frontend
+- **Vue 3** - Framework reactivo
+- **Vite** - Build tool rápido
+- **Vue Router** - Navegación SPA
+- **Tailwind CSS** - Estilos modernos
 
-## Project Setup
+### Backend
+- **Python 3.x** - Lenguaje base
+- **FastAPI** - API de alto rendimiento
+- **Pillow** - Procesamiento de imágenes
 
-```sh
+---
+
+## 📋 Requisitos Previos
+
+- **Node.js** 20.19.0 o superior
+- **Python** 3.10+
+- **npm** o **yarn**
+
+---
+
+## 🚀 Instalación Rápida
+
+### Frontend
+
+```bash
+# Instalar dependencias
 npm install
-```
 
-### Compile and Hot-Reload for Development
-
-```sh
+# Ejecutar servidor de desarrollo
 npm run dev
-```
 
-### Compile and Minify for Production
-
-```sh
+# Compilar para producción
 npm run build
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+### Backend
 
-```sh
-npm run lint
+```bash
+# Instalar dependencias
+pip install -r backend/requirements.txt
+
+# Ejecutar servidor
+cd backend
+python main.py
+
+# El backend estará disponible en http://localhost:8000
 ```
-# Python recomendado: 3.11
-# Python 3.14 NO compatible con Replicate
 
+---
+
+## 📱 Uso
+
+1. **Abrir Frontend:** Navega a `http://localhost:5173`
+2. **Cargar imagen:** Sube una foto del rostro o usa la cámara
+3. **Esperar análisis:** El sistema analiza la forma del rostro
+4. **Ver resultados:** Obtén recomendaciones de cortes personalizadas
+5. **Compartir:** Genera un QR para compartir resultados
+
+---
+
+## 📁 Estructura del Proyecto
+
+```
+.
+├── src/                    # Frontend (Vue 3)
+│   ├── components/         # Componentes reutilizables
+│   ├── views/              # Páginas principales
+│   ├── assets/             # CSS y recursos
+│   └── router/             # Configuración de rutas
+├── backend/                # Backend (Python/FastAPI)
+│   ├── main.py             # Lógica principal de API
+│   ├── face_analysis.py    # Análisis biométrico
+│   ├── database.py         # Persistencia de datos
+│   └── requirements.txt    # Dependencias Python
+├── public/                 # Archivos estáticos
+└── package.json            # Configuración de dependencias
+```
+
+---
+
+## 🔌 API Endpoints
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| `GET` | `/` | Health check |
+| `POST` | `/analizar` | Análisis de imagen |
+| `GET` | `/historial` | Histórico paginado |
+| `GET` | `/analisis/{id}` | Análisis específico |
+
+---
+
+## 🔒 Seguridad
+
+- Datos almacenados **localmente** (sin servicio cloud)
+- CORS configurado para **desarrollo local**
+- Tokens sensibles en **variables de entorno**
+- Carpetas de datos excluidas del repositorio
+
+---
+
+## 📊 Documentación Técnica
+
+- [Backend Report](./REPORTE_BACKEND.md) - Detalles técnicos del servidor
+- [Frontend Report](./REPORTE_FRONTEND.md) - Detalles de la interfaz
+
+---
+
+## 🤝 Contribuir
+
+Este proyecto es parte del currículo académico. Para mejoras:
+
+1. Crear rama feature (`git checkout -b feature/mejora`)
+2. Commit cambios (`git commit -m 'Add feature'`)
+3. Push (`git push origin feature/mejora`)
+4. Abrir Pull Request
+
+---
+
+## 📄 Licencia
+
+Proyecto académico 2026 - Instituto Técnico Superior
+
+---
+
+## 👤 Autor
+
+**Alejandro Vaca**  
+Carrera: Inteligencia Artificial  
+Semestre: 4
+
+---
+
+## 📞 Soporte
+
+Para reportar bugs o solicitar features, abre un issue en el repositorio.
+
+---
+
+**Última actualización:** 6 de Febrero, 2026

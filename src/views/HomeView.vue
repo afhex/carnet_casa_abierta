@@ -96,12 +96,13 @@ const resetAnalysis = () => {
 .home-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #8b5a2b 0%, #d4a574 100%);
-  padding: 2rem 1rem;
+  padding: 0 1rem 2rem 1rem;
 }
 
 .hero-section {
   text-align: center;
   color: white;
+  margin-top: 2rem;
   margin-bottom: 3rem;
   animation: fadeInDown 0.8s ease;
 }
@@ -124,6 +125,7 @@ const resetAnalysis = () => {
 
 .upload-section,
 .results-section {
+  padding-top: 2rem;
   animation: fadeIn 0.6s ease;
 }
 

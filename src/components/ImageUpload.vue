@@ -138,10 +138,23 @@ onUnmounted(() => {
           class="video-stream"
         ></video>
 
-        <!-- Círculo guía para centrar rostro -->
+        <!-- Círculo guía para centrar rostro con efectos futuristas -->
         <div class="face-guide">
-          <div class="face-circle"></div>
-          <p>Centra tu rostro en el círculo</p>
+          <div class="scanner-line"></div>
+          <div class="face-circle">
+            <div class="inner-ring"></div>
+            <div class="outer-ring"></div>
+          </div>
+          
+          <!-- Esquinas tecnológicas -->
+          <div class="tech-corners">
+            <div class="corner top-left"></div>
+            <div class="corner top-right"></div>
+            <div class="corner bottom-left"></div>
+            <div class="corner bottom-right"></div>
+          </div>
+
+          <p class="status-text">ANALIZANDO BIOMETRÍA...</p>
         </div>
       </div>
 
@@ -263,6 +276,7 @@ onUnmounted(() => {
   width: 100%;
   display: block;
   transform: scaleX(-1);
+  opacity: 0.9;
 }
 
 .face-guide {
@@ -273,21 +287,92 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.5) 80%);
 }
 
+/* --- EFECTOS FUTURISTAS --- */
+
+/* Círculo Central */
 .face-circle {
-  width: 200px;
-  height: 200px;
-  border: 3px solid rgba(139, 90, 43, 0.7);
-  border-radius: 50%;
-  animation: pulse 2s infinite;
+  width: 240px;
+  height: 300px; /* Más ovalado para rostro */
+  position: relative;
+  border: 2px solid rgba(0, 255, 255, 0.3);
+  border-radius: 50% 50% 45% 45%; /* Forma de rostro */
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
-.face-guide p {
-  color: white;
-  margin-top: 1rem;
-  font-weight: 600;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+/* Anillos Giratorios */
+.inner-ring, .outer-ring {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px dashed rgba(0, 255, 255, 0.4);
+}
+
+.inner-ring {
+  width: 90%;
+  height: 90%;
+  animation: spin 10s linear infinite reverse;
+}
+
+.outer-ring {
+  width: 110%;
+  height: 110%;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  border-left-color: transparent;
+  border-right-color: transparent;
+  animation: spin 8s linear infinite;
+}
+
+/* Línea de Escáner */
+.scanner-line {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00ffff, transparent);
+  box-shadow: 0 0 10px #00ffff;
+  animation: scan 3s ease-in-out infinite;
+  z-index: 10;
+}
+
+/* Esquinas Tecnológicas */
+.tech-corners {
+  position: absolute;
+  inset: 20px;
+}
+
+.corner {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(0, 255, 255, 0.6);
+  filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5));
+}
+
+.top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
+.top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
+.bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
+.bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+
+/* Texto de Estado */
+.status-text {
+  color: #00ffff;
+  margin-top: 1.5rem;
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 5px rgba(0, 255, 255, 0.8);
+  animation: blink 2s infinite;
+  background: rgba(0, 0, 0, 0.6);
+  padding: 0.3rem 0.8rem;
+  border-radius: 4px;
 }
 
 .camera-controls {
@@ -447,13 +532,21 @@ onUnmounted(() => {
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(139, 90, 43, 0.7);
-  }
-  50% {
-    box-shadow: 0 0 0 10px rgba(139, 90, 43, 0);
-  }
+@keyframes spin {
+  from { transform: translate(-50%, -50%) rotate(0deg); }
+  to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+@keyframes scan {
+  0% { top: 10%; opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { top: 90%; opacity: 0; }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 @media (max-width: 768px) {

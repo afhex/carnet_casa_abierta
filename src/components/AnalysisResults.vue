@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, nextTick } from 'vue'
 import QRCodeDisplay from './QRCodeDisplay.vue'
 
 defineProps({
@@ -14,6 +14,23 @@ defineProps({
 })
 
 const showQRCode = ref(false)
+const showTelemetry = ref(false)
+
+// Función para alternar telemetría sin auto-scroll
+const toggleTelemetry = async () => {
+  const scrollPos = window.scrollY
+  showTelemetry.value = !showTelemetry.value
+  await nextTick()
+  window.scrollTo(0, scrollPos)
+}
+
+// Función para alternar QR sin auto-scroll
+const toggleQRCode = async () => {
+  const scrollPos = window.scrollY
+  showQRCode.value = !showQRCode.value
+  await nextTick()
+  window.scrollTo(0, scrollPos)
+}
 
 // Función para descargar las imágenes al hacer clic
 const downloadImage = async (url, name) => {
@@ -55,14 +72,6 @@ const downloadImage = async (url, name) => {
           <div class="result-value">{{ results.corte_recomendado }}</div>
           <div class="result-description">
             Este estilo potenciará tus rasgos faciales
-          </div>
-        </div>
-
-        <div class="result-item">
-          <div class="result-label">Emoción Detectada</div>
-          <div class="result-value">{{ results.emocion_detectada }}</div>
-          <div class="result-description">
-            Estado emocional reconocido
           </div>
         </div>
 
@@ -119,9 +128,40 @@ const downloadImage = async (url, name) => {
         </div>
       </div>
 
+      <!-- Sección de Telemetría (Modo Ingeniero) -->
+      <div v-if="results.telemetria" class="telemetry-section">
+        <button 
+          @click="toggleTelemetry" 
+          class="btn-toggle-telemetry"
+        >
+          {{ showTelemetry ? '🔽 Ocultar' : 'Ver' }} Telemetría Biométrica
+        </button>
+        
+        <transition name="slide-fade">
+          <div v-if="showTelemetry" class="telemetry-console">
+            <div class="console-header">
+              <span class="dot red"></span>
+              <span class="dot yellow"></span>
+              <span class="dot green"></span>
+              <span class="console-title">root@biometric-core:~</span>
+            </div>
+            <div class="console-body">
+              <div class="log-line"> > VERIFICACIÓN_INTEGRIDAD... <span class="success">APROBADA</span></div>
+              <div class="log-line"> > OBJETIVO_ADQUIRIDO: <span class="highlight">VERDADERO</span></div>
+              <div class="log-line"> > ANCHO_ROSTRO: {{ results.telemetria.face_width }} px</div>
+              <div class="log-line"> > ALTO_ROSTRO: {{ results.telemetria.face_height }} px</div>
+              <div class="log-line highlight-row"> > PROPORCIÓN_A/A: {{ results.telemetria.ratio_width_height }} [INDICADOR: {{ results.tipo_rostro.toUpperCase() }}]</div>
+              <div class="log-line"> > ESTRUCTURA_MANDÍBULA: {{ results.telemetria.ratio_jaw }}</div>
+              <div class="log-line"> > ÍNDICE_FRENTE: {{ results.telemetria.ratio_forehead }}</div>
+              <div class="log-line flashing"> > CALCULANDO_MEJOR_COINCIDENCIA... COMPLETADO_</div>
+            </div>
+          </div>
+        </transition>
+      </div>
+
       <div class="action-buttons">
         <button
-          @click="showQRCode = !showQRCode"
+          @click="toggleQRCode"
           class="btn btn-qr"
         >
           📱 {{ showQRCode ? 'Ocultar' : 'Mostrar' }} Código QR
@@ -140,8 +180,106 @@ const downloadImage = async (url, name) => {
 </template>
 
 <style scoped>
+/* Telemetry Section */
+.telemetry-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.btn-toggle-telemetry {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.btn-toggle-telemetry:hover {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #bbb;
+}
+
+.telemetry-console {
+  margin-top: 1rem;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.console-header {
+  background-color: #2d2d2d;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.red { background-color: #ff5f56; }
+.yellow { background-color: #ffbd2e; }
+.green { background-color: #27c93f; }
+
+.console-title {
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  margin-left: 1rem;
+}
+
+.console-body {
+  padding: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #00ff00; /* Hacker Green */
+  line-height: 1.5;
+}
+
+.log-line {
+  margin-bottom: 0.2rem;
+}
+
+.success { color: #00ff00; font-weight: bold; }
+.highlight { color: #00ffff; font-weight: bold; }
+.highlight-row { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+
+.flashing {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
 .results-container {
   width: 100%;
+  min-height: 100%;
   padding: 2rem 0;
   animation: fadeIn 0.6s ease;
 }
@@ -151,7 +289,7 @@ const downloadImage = async (url, name) => {
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
+  overflow: visible;
 }
 
 .results-header {
@@ -178,7 +316,7 @@ const downloadImage = async (url, name) => {
 
 .results-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(3, 1fr);
   gap: 1.5rem;
   margin-bottom: 3rem;
 }
@@ -540,5 +678,102 @@ const downloadImage = async (url, name) => {
   .funny-grid {
     grid-template-columns: 1fr 1fr;
   }
+}
+
+/* Telemetry Section */
+.telemetry-section {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.btn-toggle-telemetry {
+  background: none;
+  border: 1px solid #ddd;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  color: #666;
+  transition: all 0.3s;
+}
+
+.btn-toggle-telemetry:hover {
+  background: #f0f0f0;
+  color: #333;
+  border-color: #bbb;
+}
+
+.telemetry-console {
+  margin-top: 1rem;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  overflow: hidden;
+  text-align: left;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.console-header {
+  background-color: #2d2d2d;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+.red { background-color: #ff5f56; }
+.yellow { background-color: #ffbd2e; }
+.green { background-color: #27c93f; }
+
+.console-title {
+  color: #aaa;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  margin-left: 1rem;
+}
+
+.console-body {
+  padding: 1rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  color: #00ff00; /* Hacker Green */
+  line-height: 1.5;
+}
+
+.log-line {
+  margin-bottom: 0.2rem;
+}
+
+.success { color: #00ff00; font-weight: bold; }
+.highlight { color: #00ffff; font-weight: bold; }
+.highlight-row { color: #fff; background-color: rgba(255, 255, 255, 0.1); }
+
+.flashing {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.slide-fade-enter-active {
+  transition: all 0.3s ease-out;
+}
+.slide-fade-leave-active {
+  transition: all 0.2s cubic-bezier(1.0, 0.5, 0.8, 1.0);
+}
+.slide-fade-enter-from,
+.slide-fade-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
 }
 </style>

@@ -117,6 +117,7 @@ import { RouterLink, RouterView } from 'vue-router'
 .app-main {
   flex: 1;
   width: 100%;
+  overflow-y: auto;
 }
 
 .app-footer {
