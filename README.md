@@ -142,9 +142,8 @@ Proyecto académico 2026 - Instituto Técnico Superior
 
 ---
 
-## 👤 Autor
+## 👤 Autores - Estudiantes de Sistemas y Gestión de Data
 
-**Alejandro Vaca**  
 Carrera: Inteligencia Artificial  
 Semestre: 4
 
