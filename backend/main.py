@@ -1,26 +1,20 @@
-from fastapi import FastAPI, UploadFile, File, Form
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
-import os
-import shutil
-import json
+import os, shutil, base64, random, asyncio
 from datetime import datetime
-import random
-import base64
+from PIL import Image
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+import httpx
 
 app = FastAPI()
 
-# --- CONFIGURACIÓN ---
 UPLOAD_DIR = "uploads"
-HISTORY_FILE = "history.json"
+# ⬇️ AQUÍ VA LA API
+REPLICATE_API_TOKEN = "Tu_API_Token_Aquí"
 
-# Asegurar directorios
-if not os.path.exists(UPLOAD_DIR):
-    os.makedirs(UPLOAD_DIR)
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
-# Configuración CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,77 +24,175 @@ app.add_middleware(
 )
 
 @app.get("/")
-def read_root():
-    return {"status": "Backend Simulado Activo 🧠 (Modo Local)"}
+def root():
+    return {"status": "Backend InstantID (Modo DOBLE: Realista + Gracioso) 🚀"}
 
-def guardar_historial(datos):
-    """Guarda el análisis en un JSON local."""
-    historial = []
-    if os.path.exists(HISTORY_FILE):
-        try:
-            with open(HISTORY_FILE, "r") as f:
-                historial = json.load(f)
-        except json.JSONDecodeError:
-            pass
-    
-    # Inicia el historial si está vacío
-    if not isinstance(historial, list):
-        historial = []
+# ---------------- UTIL ----------------
 
-    historial.insert(0, datos) # Agregar al inicio
-    
-    with open(HISTORY_FILE, "w") as f:
-        json.dump(historial, f, indent=2)
+def image_to_base64(image_path):
+    try:
+        with Image.open(image_path) as img:
+            if img.mode in ("RGBA", "P"): img = img.convert("RGB")
+            # Reducimos a 800px para que no falle por tamaño
+            if img.width > 800:
+                ratio = 800 / img.width
+                img = img.resize((800, int(img.height * ratio)), Image.Resampling.LANCZOS)
+            buffer = BytesIO()
+            img.save(buffer, format="JPEG", quality=90) # Calidad alta
+            buffer.seek(0)
+            encoded = base64.b64encode(buffer.getvalue()).decode("utf-8")
+            return encoded
+    except Exception as e:
+        print("❌ Error base64:", e)
+        return None
 
-def generar_imagen_mock(ancho=400, alto=400):
-    """Genera una imagen placeholder con Pillow para simular IA."""
-    img = Image.new('RGB', (ancho, alto), color = (73, 109, 137))
-    d = ImageDraw.Draw(img)
-    d.text((10,10), "Simulacion AI", fill=(255,255,0))
-    
-    buffered = BytesIO()
-    img.save(buffered, format="PNG")
-    img_str = base64.b64encode(buffered.getvalue()).decode()
-    return f"data:image/png;base64,{img_str}"
+# ---------------- REPLICATE (Función Genérica) ----------------
+
+async def generar_imagen(prompt, image_path, tipo_generacion):
+    url = "https://api.replicate.com/v1/predictions"
+    headers = {
+        "Authorization": f"Token {REPLICATE_API_TOKEN}",
+        "Content-Type": "application/json",
+    }
+
+    try:
+        image_base64 = image_to_base64(image_path)
+        if not image_base64: raise Exception("Fallo conversión imagen")
+    except Exception as e:
+        print("❌ Error procesando imagen:", e)
+        return None
+
+    # Usamos la CONFIGURACIÓN GANADORA (GrandlineAI + Parámetros de Realismo)
+    payload = {
+        "version": "03914a0c3326bf44383d0cd84b06822618af879229ce5d1d53bef38d93b68279",
+        "input": {
+            "image": f"data:image/jpeg;base64,{image_base64}",
+            "prompt": prompt,
+            # Prompt negativo para evitar piel de plástico
+            "negative_prompt": "smooth skin, plastic skin, airbrushed, photoshop, makeup, render, 3d, cartoon, drawing, illustration, anime, deformed, blur, low quality, flat lighting",
+            "num_inference_steps": 30,
+            # AJUSTES CLAVE QUE TE GUSTARON:
+            "guidance_scale": 3.5, 
+            "ip_adapter_scale": 0.60,     
+            "controlnet_conditioning_scale": 0.60
+        }
+    }
+
+    async with httpx.AsyncClient(timeout=300) as client:
+        print(f"⏳ Enviando a Replicate ({tipo_generacion})...")
+        r = await client.post(url, json=payload, headers=headers)
+
+        if r.status_code != 201:
+            print(f"❌ Replicate error en {tipo_generacion}:", r.text)
+            return None
+
+        get_url = r.json()["urls"]["get"]
+
+        # Polling
+        for _ in range(120):
+            poll = await client.get(get_url, headers=headers)
+            data = poll.json()
+
+            if data["status"] == "succeeded":
+                output = data.get("output")
+                print(f"✅ Generado ({tipo_generacion}): {output}")
+                if isinstance(output, list) and len(output) > 0: return output[0]
+                elif isinstance(output, str): return output
+                return None
+
+            if data["status"] == "failed":
+                print(f"❌ Falló ({tipo_generacion}):", data.get("error"))
+                return None
+            await asyncio.sleep(2)
+        return None
+
+# ---------------- ENDPOINT PRINCIPAL ----------------
 
 @app.post("/analizar")
-async def analizar_rostro(file: UploadFile = File(...)):
+async def analizar(file: UploadFile = File(...)):
     try:
-        # 1. Guardar Imagen Localmente
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{file.filename}"
-        file_path = os.path.join(UPLOAD_DIR, filename)
-        
-        with open(file_path, "wb") as buffer:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{ts}_{file.filename}"
+        path = os.path.join(UPLOAD_DIR, filename)
+
+        with open(path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-            
-        print(f"📸 Imagen guardada en: {file_path}")
 
-        # 2. Análisis Simulado (Aquí iría MediaPipe)
-        opciones_rostro = ["Ovalado", "Redondo", "Cuadrado", "Corazon"]
-        opciones_corte = ["Fade Medio", "Pompadour", "Buzz Cut", "Crop Top"]
-        opciones_emocion = ["Feliz", "Serio", "Sorprendido", "Neutro"]
-        opciones_genero = ["Masculino", "Femenino"]
-        
-        datos_analisis = {
-            "timestamp": timestamp,
-            "filename": filename,
-            "tipo_rostro": random.choice(opciones_rostro),
-            "corte_recomendado": random.choice(opciones_corte),
-            "emocion_detectada": random.choice(opciones_emocion),
-            "genero_detectado": random.choice(opciones_genero),
-            "imagen_generada_url": generar_imagen_mock() # Devuelve base64
-        }
-        
-        # 3. Guardar en Historial
-        guardar_historial(datos_analisis)
-        print("✅ Análisis registrado en history.json")
+        print("📸 Imagen recibida:", filename)
 
+        # ==========================================
+        # 1. SELECCIÓN DE CORTES (REALISTA Y GRACIOSO)
+        # ==========================================
+        lista_realistas = [
+            "Buzz Cut", "Textured Crop", "Messy Quiff", "Modern Mullet", "Pompadour", # Hombres
+            "Bob Cut", "Long Wavy Layers", "Pixie Cut", "Curtain Bangs", "Straight Sleek Hair" # Mujeres
+        ]
+        corte_realista = random.choice(lista_realistas)
+
+        lista_graciosos = [
+            "Completely Bald Head",          # Calvo total como una bola de billar
+            "Crazy Einstein Scientist Hair", # Pelo loco y explotado
+            "Bright Neon Green Mohawk",      # Mohicano punk verde neón
+            "Clown Wig with red nose",       # Peluca de payaso
+            "Historical Powdered Wig 1700s"  # Peluca blanca antigua ridícula
+        ]
+        corte_gracioso = random.choice(lista_graciosos)
+        
+        # ==========================================
+        # 2. GENERACIÓN 1: LA REALISTA (Recomendada)
+        # ==========================================
+        prompt_realista = (
+            f"Raw candid photo of a person with a {corte_realista} hairstyle, "
+            "shot on 35mm film, fujifilm, grainy texture, "
+            "visible skin pores, natural uneven lighting, sharp focus, "
+            "realistic shadows, dslr"
+        )
+        print(f"🚀 --- INICIANDO GENERACIÓN REALISTA: {corte_realista} ---")
+        url_realista = await generar_imagen(prompt_realista, path, "Realista")
+
+        # ==========================================
+        # 3. GENERACIÓN 2: LA GRACIOSA (Reacción)
+        # ==========================================
+        # Usamos un prompt que pida una foto realista pero de un peinado ridículo
+        prompt_gracioso = (
+            f"A funny photograph of the person with a {corte_gracioso}, "
+            "looking ridiculous, realistic textures, sharp focus, bright lighting, "
+            "humorous expression if possible"
+        )
+        print(f"🤡 --- INICIANDO GENERACIÓN GRACIOSA: {corte_gracioso} ---")
+        # Usamos la misma imagen original (path) para la segunda generación
+        url_gracioso = await generar_imagen(prompt_gracioso, path, "Gracioso")
+
+
+        # Fallbacks por si alguna falla
+        if not url_realista: url_realista = "https://placehold.co/600x600/png?text=Error+Realista"
+        if not url_gracioso: url_gracioso = "https://placehold.co/600x600/png?text=Error+Gracioso"
+
+        # ==========================================
+        # 4. RESPUESTA FINAL (CON LAS DOS URLs)
+        # ==========================================
         return {
-            "mensaje": "Análisis completado (Modo Local)",
-            "datos": datos_analisis
+            "mensaje": "Éxito",
+            "datos": {
+                # La principal recomendada
+                "imagen_generada_url": url_realista,
+                "corte_recomendado": corte_realista,
+
+                # La extra graciosa
+                "imagen_graciosa_url": url_gracioso,
+                "corte_gracioso_nombre": corte_gracioso,
+
+                # Metadatos
+                "tipo_rostro": "Ovalado",
+                "emocion_detectada": "Feliz",
+                "genero_detectado": "Auto-Detectado"
+            }
         }
 
     except Exception as e:
-        print(f"❌ Error en backend: {e}")
+        print("❌ Error Crítico:", e)
         return JSONResponse(status_code=500, content={"error": str(e)})
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -42,3 +42,6 @@ npm run build
 ```sh
 npm run lint
 ```
+# Python recomendado: 3.11
+# Python 3.14 NO compatible con Replicate
+

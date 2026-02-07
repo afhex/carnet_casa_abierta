@@ -39,3 +39,7 @@ __screenshots__/
 backend/uploads/
 backend/history.json
 backend/.venv/
+
+__pycache__/
+*.pyc
+
