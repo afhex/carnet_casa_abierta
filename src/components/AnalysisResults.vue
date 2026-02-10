@@ -2,7 +2,7 @@
 import { ref, nextTick } from 'vue'
 import QRCodeDisplay from './QRCodeDisplay.vue'
 
-defineProps({
+const props = defineProps({
   results: {
     type: Object,
     required: true
@@ -13,8 +13,17 @@ defineProps({
   }
 })
 
+const emit = defineEmits(['reset'])
+
 const showQRCode = ref(false)
 const showTelemetry = ref(false)
+
+// Estados para carnet
+const nombreEstudiante = ref('')
+const cargandoCarnet = ref(false)
+const previewCarnet = ref(null)
+const mostrarPreview = ref(false)
+const errorCarnet = ref(null)
 
 // Función para alternar telemetría sin auto-scroll
 const toggleTelemetry = async () => {
@@ -47,6 +56,63 @@ const downloadImage = async (url, name) => {
     console.error('Error descargando:', error);
   }
 }
+
+// Función para generar carnet
+const generarCarnet = async () => {
+  cargandoCarnet.value = true
+  errorCarnet.value = null
+  
+  try {
+    if (!props.results || !props.results.analysis_id) {
+      throw new Error('Datos del análisis no disponibles')
+    }
+    
+    console.log('Generando carnet para análisis:', props.results.analysis_id)
+    
+    const response = await fetch('http://localhost:8000/generar-carnet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        analysis_id: props.results.analysis_id,
+        nombre: nombreEstudiante.value.trim() || null
+      })
+    })
+    
+    if (!response.ok) {
+      const error = await response.json()
+      throw new Error(error.error || 'Error al generar carnet')
+    }
+    
+    const blob = await response.blob()
+    previewCarnet.value = URL.createObjectURL(blob)
+    mostrarPreview.value = true
+    
+  } catch (error) {
+    console.error('Error generando carnet:', error)
+    errorCarnet.value = error.message || 'Error desconocido al generar carnet'
+  } finally {
+    cargandoCarnet.value = false
+  }
+}
+
+// Descargar carnet
+const descargarCarnet = () => {
+  const link = document.createElement('a')
+  link.href = previewCarnet.value
+  link.download = `carnet_${props.results.analysis_id}_${nombreEstudiante.value.replace(/\s+/g, '_') || 'estudiante'}.pdf`
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
+// Comenzar de nuevo
+const comenzarDeNuevo = () => {
+  nombreEstudiante.value = ''
+  mostrarPreview.value = false
+  previewCarnet.value = null
+  errorCarnet.value = null
+  emit('reset')
+}
 </script>
 
 <template>
@@ -61,7 +127,7 @@ const downloadImage = async (url, name) => {
       <div class="results-grid">
         <div class="result-item">
           <div class="result-label">Tipo de Rostro</div>
-          <div class="result-value">{{ results.tipo_rostro }}</div>
+          <div class="result-value">{{ props.results.tipo_rostro }}</div>
           <div class="result-description">
             Tu estructura facial detectada
           </div>
@@ -69,7 +135,7 @@ const downloadImage = async (url, name) => {
 
         <div class="result-item highlight">
           <div class="result-label">✂️ Corte Recomendado</div>
-          <div class="result-value">{{ results.corte_recomendado }}</div>
+          <div class="result-value">{{ props.results.corte_recomendado }}</div>
           <div class="result-description">
             Este estilo potenciará tus rasgos faciales
           </div>
@@ -77,54 +143,104 @@ const downloadImage = async (url, name) => {
 
         <div class="result-item">
           <div class="result-label">Género Detectado</div>
-          <div class="result-value">{{ results.genero_detectado }}</div>
+          <div class="result-value">{{ props.results.genero_detectado }}</div>
           <div class="result-description">
             Base para la personalización
           </div>
         </div>
       </div>
 
-      <div v-if="results.imagen_generada_url || results.imagen_graciosa_url" class="comparison-images-section">
+      <div class="comparison-images-section">
         <h3 class="section-title">✨ Resultados Generados</h3>
         
         <div class="generated-images-grid">
           <!-- Imagen del corte recomendado -->
-          <div v-if="results.imagen_generada_url" class="generated-card">
+          <div class="generated-card">
             <div class="card-badge">Recomendado</div>
             <div class="image-wrapper">
               <img
-                :src="results.imagen_generada_url"
+                v-if="props.results.imagen_generada_url"
+                :src="props.results.imagen_generada_url"
                 alt="Corte generado"
                 class="generated-image"
               />
+              <div v-else class="placeholder-image">
+                <div class="placeholder-content">
+                  <p>🖼️</p>
+                  <p class="placeholder-text">Imagen IA</p>
+                  <p class="placeholder-subtext">Generada con Replicate</p>
+                </div>
+              </div>
             </div>
-            <h4>{{ results.corte_recomendado }}</h4>
+            <h4>{{ props.results.corte_recomendado }}</h4>
             <p class="card-description">
               Tu nuevo look profesional
             </p>
-            <button @click="downloadImage(results.imagen_generada_url, results.corte_recomendado)" class="btn-download">
+            <button 
+              v-if="props.results.imagen_generada_url"
+              @click="downloadImage(props.results.imagen_generada_url, props.results.corte_recomendado)" 
+              class="btn-download">
               ⬇️ Descargar
             </button>
+            <p v-else class="placeholder-msg">Imagen en generación...</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección Carnet -->
+      <div v-if="!mostrarPreview" class="carnet-section">
+        <h3 class="section-title">🎫 Generar Carnet de Identificación</h3>
+        
+        <div class="carnet-form">
+          <div class="form-group">
+            <label for="estudiante-nombre">
+              Nombre del Estudiante (opcional)
+            </label>
+            <input 
+              id="estudiante-nombre"
+              v-model="nombreEstudiante" 
+              type="text" 
+              placeholder="Ej: Juan García"
+              class="input-nombre"
+              :disabled="cargandoCarnet"
+            />
+            <small>Si lo dejas en blanco, el carnet no incluirá nombre</small>
           </div>
 
-          <!-- Imagen graciosa -->
-          <div v-if="results.imagen_graciosa_url" class="generated-card">
-            <div class="card-badge funny-badge">🎭 Divertido</div>
-            <div class="image-wrapper">
-              <img 
-                :src="results.imagen_graciosa_url" 
-                :alt="results.corte_gracioso_nombre" 
-                class="generated-image"
-              />
-            </div>
-            <h4>{{ results.corte_gracioso_nombre }}</h4>
-            <p class="card-description">
-              ¡Porque no todo tiene que ser serio!
-            </p>
-            <button @click="downloadImage(results.imagen_graciosa_url, results.corte_gracioso_nombre)" class="btn-download">
-              ⬇️ Descargar
-            </button>
+          <div v-if="errorCarnet" class="error-message">
+            ❌ {{ errorCarnet }}
           </div>
+
+          <button 
+            @click="generarCarnet" 
+            :disabled="cargandoCarnet"
+            class="btn btn-carnet"
+          >
+            {{ cargandoCarnet ? '⏳ Generando carnet...' : '🎫 Generar Carnet' }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Vista Previa del Carnet -->
+      <div v-if="mostrarPreview" class="carnet-preview-section">
+        <h3 class="section-title">📋 Vista Previa del Carnet</h3>
+        
+        <div class="preview-wrapper">
+          <iframe 
+            v-if="previewCarnet" 
+            :src="previewCarnet" 
+            class="pdf-preview"
+            title="Vista previa del carnet"
+          ></iframe>
+        </div>
+        
+        <div class="preview-actions">
+          <button @click="descargarCarnet" class="btn btn-primary">
+            ⬇️ Descargar Carnet PDF
+          </button>
+          <button @click="comenzarDeNuevo" class="btn btn-secondary">
+            🔄 Comenzar de Nuevo
+          </button>
         </div>
       </div>
 
@@ -148,11 +264,11 @@ const downloadImage = async (url, name) => {
             <div class="console-body">
               <div class="log-line"> > VERIFICACIÓN_INTEGRIDAD... <span class="success">APROBADA</span></div>
               <div class="log-line"> > OBJETIVO_ADQUIRIDO: <span class="highlight">VERDADERO</span></div>
-              <div class="log-line"> > ANCHO_ROSTRO: {{ results.telemetria.face_width }} px</div>
-              <div class="log-line"> > ALTO_ROSTRO: {{ results.telemetria.face_height }} px</div>
-              <div class="log-line highlight-row"> > PROPORCIÓN_A/A: {{ results.telemetria.ratio_width_height }} [INDICADOR: {{ results.tipo_rostro.toUpperCase() }}]</div>
-              <div class="log-line"> > ESTRUCTURA_MANDÍBULA: {{ results.telemetria.ratio_jaw }}</div>
-              <div class="log-line"> > ÍNDICE_FRENTE: {{ results.telemetria.ratio_forehead }}</div>
+              <div class="log-line"> > ANCHO_ROSTRO: {{ props.results.telemetria.face_width }} px</div>
+              <div class="log-line"> > ALTO_ROSTRO: {{ props.results.telemetria.face_height }} px</div>
+              <div class="log-line highlight-row"> > PROPORCIÓN_A/A: {{ props.results.telemetria.ratio_width_height }} [INDICADOR: {{ props.results.tipo_rostro.toUpperCase() }}]</div>
+              <div class="log-line"> > ESTRUCTURA_MANDÍBULA: {{ props.results.telemetria.ratio_jaw }}</div>
+              <div class="log-line"> > ÍNDICE_FRENTE: {{ props.results.telemetria.ratio_forehead }}</div>
               <div class="log-line flashing"> > CALCULANDO_MEJOR_COINCIDENCIA... COMPLETADO_</div>
             </div>
           </div>
@@ -775,5 +891,241 @@ const downloadImage = async (url, name) => {
 .slide-fade-leave-to {
   transform: translateY(-10px);
   opacity: 0;
+}
+
+/* Sección de Carnet */
+.carnet-section {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #f0f0f0 100%);
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+}
+
+.carnet-form {
+  margin-top: 1.5rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+  font-size: 1rem;
+}
+
+.input-nombre {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-nombre:focus {
+  outline: none;
+  border-color: #c77a3a;
+  box-shadow: 0 0 0 3px rgba(199, 122, 58, 0.1);
+}
+
+.input-nombre:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-group small {
+  display: block;
+  margin-top: 0.25rem;
+  color: #999;
+  font-size: 0.85rem;
+}
+
+.error-message {
+  padding: 0.75rem;
+  background-color: #fee;
+  border-left: 4px solid #c33;
+  color: #c33;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+.btn-carnet {
+  width: 100%;
+  padding: 1rem;
+  background: linear-gradient(135deg, #c77a3a 0%, #a56a2a 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(199, 122, 58, 0.3);
+}
+
+.btn-carnet:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(199, 122, 58, 0.4);
+}
+
+.btn-carnet:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Vista Previa Carnet */
+.carnet-preview-section {
+  margin: 2rem 0;
+  padding: 2rem;
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e0e0e0;
+}
+
+.carnet-preview-section h3 {
+  margin-top: 0;
+}
+
+.preview-wrapper {
+  margin: 1.5rem 0;
+  background: #f5f5f5;
+  border-radius: 8px;
+  overflow: hidden;
+  /* Mantener proporción 1004:638 del carnet */
+  aspect-ratio: 1004 / 638;
+  max-width: 100%;
+  height: auto;
+  min-height: 500px;
+  max-height: 700px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pdf-preview {
+  width: 100% !important;
+  height: 100% !important;
+  border: none;
+  border-radius: 8px;
+  display: block;
+}
+
+.preview-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-primary,
+.btn-secondary {
+  flex: 1;
+  padding: 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 200px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(40, 167, 69, 0.4);
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+.btn-secondary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(108, 117, 125, 0.4);
+}
+
+.placeholder-image {
+  width: 100%;
+  height: 400px;
+  background: linear-gradient(135deg, #f5f1e6 0%, #e8dcc8 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px dashed #c9b896;
+}
+
+.placeholder-content {
+  text-align: center;
+  color: #7d6d5d;
+}
+
+.placeholder-content p:first-child {
+  font-size: 3rem;
+  margin: 0 0 0.5rem 0;
+}
+
+.placeholder-text {
+  font-weight: 600;
+  font-size: 1.1rem;
+  margin: 0.5rem 0;
+}
+
+.placeholder-subtext {
+  font-size: 0.9rem;
+  color: #a89a8a;
+  margin: 0.3rem 0 0 0;
+}
+
+.placeholder-msg {
+  color: #8b7d6d;
+  font-size: 0.95rem;
+  margin-top: 1rem;
+  padding: 0.8rem;
+  background: #f9f6f1;
+  border-radius: 8px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .preview-actions {
+    flex-direction: column;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    min-width: auto;
+  }
+
+  .pdf-preview {
+    /* Mantener proporción en móviles */
+    height: auto;
+  }
+
+  .preview-wrapper {
+    max-height: 500px;
+    min-height: 300px;
+  }
+
+  .carnet-section,
+  .carnet-preview-section {
+    padding: 1.5rem;
+  }
 }
 </style>

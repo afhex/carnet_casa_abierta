@@ -1,45 +1,37 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-.DS_Store
-dist
-dist-ssr
-coverage
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.env
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-*.tsbuildinfo
-
-.eslintcache
-
-# Cypress
-/cypress/videos/
-/cypress/screenshots/
-
-# Vitest
-__screenshots__/
-
-backend/uploads/
-backend/history.json
-backend/.venv/
-
+# Dependencies
+node_modules/
+.venv/
 __pycache__/
 *.pyc
 
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Data & Generated Files
+backend/uploads/*
+backend/generated_images/*
+backend/generated_carnets/*
+backend/biometrics.db
+!backend/uploads/.gitkeep
+!backend/generated_images/.gitkeep
+!backend/generated_carnets/.gitkeep
+
+# Build
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
