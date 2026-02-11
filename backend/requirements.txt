@@ -7,4 +7,4 @@ numpy
 pillow
 mediapipe
 fer
-moviepy<2.0.0
+moviepy<2.0.0python-dotenv

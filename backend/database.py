@@ -24,7 +24,10 @@ def init_db():
             ratio_width_height REAL NOT NULL,
             ratio_jaw REAL NOT NULL,
             ratio_forehead REAL NOT NULL,
-            gender TEXT DEFAULT 'Auto-Detectado'
+            gender TEXT DEFAULT 'Auto-Detectado',
+            generated_image_path TEXT,
+            haircut_recommendation TEXT,
+            emotion TEXT
         )
     """)
     
@@ -36,16 +39,22 @@ def save_analysis(
     image_path: str,
     face_shape: str,
     biometrics: Dict[str, float],
-    gender: str = "Auto-Detectado"
+    gender: str = "Auto-Detectado",
+    generated_image_path: str = None,
+    haircut_recommendation: str = None,
+    emotion: str = None
 ) -> int:
     """
     Guarda un análisis biométrico en la base de datos.
     
     Args:
-        image_path: Ruta relativa a la imagen
+        image_path: Ruta relativa a la imagen original
         face_shape: Forma del rostro detectada
         biometrics: Diccionario con medidas biométricas
         gender: Género (por defecto Auto-Detectado)
+        generated_image_path: Ruta a la imagen generada con IA
+        haircut_recommendation: Recomendación de corte
+        emotion: Emoción detectada
     
     Returns:
         ID del análisis guardado
@@ -56,8 +65,9 @@ def save_analysis(
     cursor.execute("""
         INSERT INTO biometric_analyses 
         (image_path, face_shape, face_width, face_height, 
-         ratio_width_height, ratio_jaw, ratio_forehead, gender)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+         ratio_width_height, ratio_jaw, ratio_forehead, gender,
+         generated_image_path, haircut_recommendation, emotion)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     """, (
         image_path,
         face_shape,
@@ -66,7 +76,10 @@ def save_analysis(
         biometrics["ratio_width_height"],
         biometrics["ratio_jaw"],
         biometrics["ratio_forehead"],
-        gender
+        gender,
+        generated_image_path,
+        haircut_recommendation,
+        emotion
     ))
     
     analysis_id = cursor.lastrowid
