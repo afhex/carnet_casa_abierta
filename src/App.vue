@@ -6,10 +6,14 @@ import { RouterLink, RouterView } from 'vue-router'
   <div id="app" class="app-container">
     <header class="app-header">
       <div class="header-content">
-        <RouterLink to="/" class="logo-link">
+        <RouterLink to="/" class="logo-link" aria-label="Casa Abierta">
           <img src="/logo.png" alt="Casa Abierta" class="logo-image">
-          <span class="app-name">Casa Abierta</span>
         </RouterLink>
+
+        <div class="title-block">
+          <span class="title-main">CASA ABIERTA 2026</span>
+          <span class="title-sub">SISTEMAS Y GESTION DE DATA</span>
+        </div>
 
         <nav class="nav-menu">
           <RouterLink to="/" class="nav-link">Inicio</RouterLink>
@@ -23,7 +27,7 @@ import { RouterLink, RouterView } from 'vue-router'
     </main>
 
     <footer class="app-footer">
-      <p>&copy; 2026 Casa Abierta - Análisis de Cortes con IA</p>
+      <p>&copy; 2026 Casa Abierta</p>
     </footer>
   </div>
 </template>
@@ -39,7 +43,7 @@ import { RouterLink, RouterView } from 'vue-router'
 .app-header {
   background: white;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  padding: 1rem 0;
+  padding: 1rem 0.5rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -49,59 +53,66 @@ import { RouterLink, RouterView } from 'vue-router'
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 140px 1fr 200px;
   align-items: center;
+  gap: 1rem;
 }
 
 .logo-link {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 0.8rem;
   text-decoration: none;
-  color: #333;
-  transition: color 0.3s ease;
-}
-
-.logo-link:hover {
-  color: #c77a3a;
 }
 
 .logo-image {
-  height: 50px;
+  height: 56px;
   width: auto;
   object-fit: contain;
 }
 
-.app-name {
+.title-block {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.title-main {
+  font-weight: 700;
   font-size: 1.3rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #8b5a2b 0%, #d4a574 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: #0b2a4a;
+  letter-spacing: 0.2rem;
+}
+
+.title-sub {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: #3a6ea5;
+  letter-spacing: 0.25rem;
 }
 
 .nav-menu {
   display: flex;
-  gap: 2rem;
+  gap: 1.5rem;
+  justify-content: flex-end;
   align-items: center;
 }
 
 .nav-link {
   text-decoration: none;
-  color: #666;
-  font-weight: 500;
+  color: #35506b;
+  font-weight: 600;
   transition: all 0.3s ease;
   position: relative;
 }
 
 .nav-link:hover {
-  color: #c77a3a;
+  color: #1e4c7a;
 }
 
 .nav-link.router-link-active {
-  color: #c77a3a;
+  color: #1e4c7a;
 }
 
 .nav-link.router-link-active::after {
@@ -111,7 +122,7 @@ import { RouterLink, RouterView } from 'vue-router'
   left: 0;
   right: 0;
   height: 2px;
-  background: linear-gradient(135deg, #8b5a2b 0%, #d4a574 100%);
+  background: #1e4c7a;
 }
 
 .app-main {
@@ -121,30 +132,37 @@ import { RouterLink, RouterView } from 'vue-router'
 }
 
 .app-footer {
-  background: #333;
+  background: #0f2742;
   color: white;
   text-align: center;
-  padding: 2rem 1rem;
-  margin-top: 3rem;
-  font-size: 0.9rem;
+  padding: 1.5rem 1rem;
+  font-size: 0.85rem;
 }
 
 @media (max-width: 768px) {
   .header-content {
-    flex-direction: column;
-    gap: 1rem;
+    grid-template-columns: 1fr;
+    text-align: center;
+    gap: 0.7rem;
   }
 
   .nav-menu {
     gap: 1rem;
+    justify-content: center;
   }
 
   .nav-link {
     font-size: 0.9rem;
   }
 
-  .app-name {
+  .title-main {
     font-size: 1.1rem;
+    letter-spacing: 0.12rem;
+  }
+
+  .title-sub {
+    font-size: 0.75rem;
+    letter-spacing: 0.12rem;
   }
 }
 </style>

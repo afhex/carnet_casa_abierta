@@ -145,7 +145,7 @@ onUnmounted(() => {
             <div class="inner-ring"></div>
             <div class="outer-ring"></div>
           </div>
-          
+
           <!-- Esquinas tecnológicas -->
           <div class="tech-corners">
             <div class="corner top-left"></div>
@@ -430,32 +430,42 @@ onUnmounted(() => {
 
 /* Upload Area */
 .upload-area {
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .upload-box {
   background: white;
-  border-radius: 16px;
-  padding: 3rem 2rem;
+  border-radius: 18px;
+  padding: 2.6rem 2.4rem 2.2rem;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 40px rgba(9, 30, 66, 0.18);
   animation: slideUp 0.6s ease;
+  border: 1px solid rgba(15, 39, 66, 0.08);
 }
 
 .icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 1.2rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  color: #1e4c7a;
+  background: #eef4fb;
+  border-radius: 12px;
+  border: 1px solid #d7e6f8;
 }
 
 .upload-box h2 {
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  color: #0f2742;
+  margin-bottom: 0.6rem;
+  font-size: 1.7rem;
+  font-weight: 700;
 }
 
 .upload-box p {
-  color: #666;
-  margin-bottom: 2rem;
+  color: #5b6b7a;
+  margin-bottom: 1.8rem;
   font-size: 0.95rem;
 }
 
@@ -468,11 +478,11 @@ onUnmounted(() => {
 }
 
 .btn {
-  padding: 0.8rem 1.5rem;
+  padding: 0.7rem 1.4rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 160px;
@@ -484,32 +494,33 @@ onUnmounted(() => {
 }
 
 .btn-primary {
-  background-color: #8b5a2b;
+  background-color: #1e4c7a;
   color: white;
+  box-shadow: 0 8px 18px rgba(30, 76, 122, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #6b431f;
+  background-color: #173e64;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(139, 90, 43, 0.4);
+  box-shadow: 0 12px 24px rgba(30, 76, 122, 0.3);
 }
 
 .btn-secondary {
   background-color: white;
-  color: #8b5a2b;
-  border: 2px solid #8b5a2b;
+  color: #1e4c7a;
+  border: 1px solid #9fc0e4;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #faf5f0;
+  background-color: #eef4fb;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(139, 90, 43, 0.2);
+  box-shadow: 0 8px 16px rgba(30, 76, 122, 0.15);
 }
 
 .info-text {
-  font-size: 0.85rem;
-  color: #999;
-  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: #6f7f90;
+  margin-top: 0.9rem;
 }
 
 @keyframes slideUp {
@@ -551,7 +562,7 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .upload-box {
-    padding: 2rem 1.5rem;
+    padding: 2.2rem 1.6rem;
   }
 
   .button-group {
@@ -567,7 +578,7 @@ onUnmounted(() => {
   }
 
   .upload-box h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .camera-container {

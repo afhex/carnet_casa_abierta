@@ -11,6 +11,7 @@ from datetime import datetime
 from PIL import Image
 from io import BytesIO
 import httpx
+from fastapi.staticfiles import StaticFiles
 
 # Agregar directorio actual al path para imports
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -20,12 +21,14 @@ import database
 
 # Configuración
 UPLOAD_DIR = "uploads"
-REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "") 
 
 # Crear directorio de uploads si no existe
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 app = FastAPI(title="Casa Abierta - API", version="1.0.0")
+
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 # Inicializar base de datos
 database.init_db()
@@ -162,9 +165,15 @@ async def analizar(file: UploadFile = File(...)):
             f"fitting a {rostro_detectado} face shape, professional portrait"
         )
 
-        # URLs placeholders (modo simulación para ahorrar créditos)
-        url_realista = "https://replicate.delivery/pbxt/demo/realistic.jpg"
-        url_alternativo = "https://replicate.delivery/pbxt/demo/funny.jpg"
+        prompt_alternativo = (
+            f"Hilarious and funny photo of a person with a {corte_alternativo}, "
+            f"exaggerated and ridiculous style, comedic expression"
+        )
+
+        # Generar imágenes
+        print("Generando imágenes...")
+        url_realista = await generar_imagen(prompt_realista, path, "Corte Realista")
+        url_alternativo = await generar_imagen(prompt_alternativo, path, "Corte Gracioso")
 
         # Guardar análisis en base de datos
         analysis_id = database.save_analysis(

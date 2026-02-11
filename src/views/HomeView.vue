@@ -53,11 +53,6 @@ const resetAnalysis = () => {
 
 <template>
   <main class="home-container">
-    <section class="hero-section">
-      <h1>✂️ Análisis de Cortes de Cabello</h1>
-      <p>Descubre el corte de cabello perfecto para tu rostro con IA</p>
-    </section>
-
     <div class="content-wrapper">
       <!-- Mostrar componente de carga de imagen si no hay resultados -->
       <div v-if="!analysisResults" class="upload-section">
@@ -94,38 +89,23 @@ const resetAnalysis = () => {
 
 <style scoped>
 .home-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #8b5a2b 0%, #d4a574 100%);
-  padding: 0 1rem 2rem 1rem;
-}
-
-.hero-section {
-  text-align: center;
-  color: white;
-  margin-top: 2rem;
-  margin-bottom: 3rem;
-  animation: fadeInDown 0.8s ease;
-}
-
-.hero-section h1 {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
-  font-weight: bold;
-}
-
-.hero-section p {
-  font-size: 1.1rem;
-  opacity: 0.9;
+  min-height: calc(100vh - 140px);
+  background: linear-gradient(120deg, #1f6fb2 0%, #2e7cc4 40%, #c07a33 75%, #e6a354 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem 3rem;
 }
 
 .content-wrapper {
-  max-width: 800px;
+  width: 100%;
+  max-width: 860px;
   margin: 0 auto;
 }
 
 .upload-section,
 .results-section {
-  padding-top: 2rem;
+  padding-top: 0;
   animation: fadeIn 0.6s ease;
 }
 
@@ -162,11 +142,11 @@ const resetAnalysis = () => {
   margin: 2rem auto 0;
   padding: 0.8rem 2rem;
   background-color: white;
-  color: #8b5a2b;
+  color: #1e4c7a;
   border: none;
   border-radius: 25px;
   font-size: 1rem;
-  font-weight: bold;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -174,17 +154,6 @@ const resetAnalysis = () => {
 .btn-new-analysis:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-}
-
-@keyframes fadeInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
 }
 
 @keyframes fadeIn {
@@ -204,15 +173,7 @@ const resetAnalysis = () => {
 
 @media (max-width: 768px) {
   .home-container {
-    padding: 1rem 0.5rem;
-  }
-
-  .hero-section h1 {
-    font-size: 2rem;
-  }
-
-  .hero-section p {
-    font-size: 0.95rem;
+    padding: 2rem 0.8rem 2.5rem;
   }
 }
 </style>
