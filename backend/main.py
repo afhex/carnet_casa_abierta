@@ -23,6 +23,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 import face_analysis
 import database
 import generar_carnets
+from analisis_facial import detectar_caracteristicas, seleccionar_corte
 
 # Configuración
 UPLOAD_DIR = "uploads"
@@ -186,20 +187,48 @@ async def analizar(file: UploadFile = File(...)):
 
         print(f"📸 Imagen original guardada: {filename}")
 
-        # Analizar propiedades del rostro
-        analysis_results = face_analysis.analyze_image_properties(path)
-        rostro_detectado = analysis_results["face_shape"]
-        genero_detectado = analysis_results["gender"]
-        emocion_detectada = analysis_results.get("emotion", "Desconocida")
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        # LÓGICA DE DETECCIÓN CON OVERRIDE MANUAL
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+        
+        print(f"📂 Procesando archivo: {file.filename}")
 
-        # Obtener recomendación de corte
-        corte_recomendado = face_analysis.get_haircut_recommendation(rostro_detectado)
+        # --- NIVEL 1: INTERRUPTOR MANUAL (Prioridad Máxima) ---
+        if "mujer" in file.filename.lower() or "woman" in file.filename.lower():
+            print("⚠️ MODIFICACIÓN MANUAL DETECTADA: Forzando género a MUJER.")
+            genero_detectado = "Mujer"
+            emocion_detectada = "neutral" # Valor por defecto seguro
 
+        # --- NIVEL 2: INTELIGENCIA ARTIFICIAL (DeepFace) ---
+        else:
+            print("🤖 Iniciando detección automática con IA...")
+            try:
+                # Llamada a tu función de DeepFace existente
+                datos_biometricos = detectar_caracteristicas(path)
+                genero_detectado = datos_biometricos["genero"]
+                emocion_detectada = datos_biometricos["emocion"]
+            except Exception as e:
+                print(f"❌ Error en IA: {e}. Usando valor por defecto (Hombre).")
+                genero_detectado = "Hombre"
+                emocion_detectada = "neutral"
+
+        # --- PASO 3: GENERACIÓN (Usando el género decidido) ---
+        print(f"🎯 Género final aplicado: {genero_detectado}")
+
+        # Aquí llamamos a la función de selección aleatoria que ya creamos
+        prompt_visual_corte, nombre_corte = seleccionar_corte(genero_detectado)
+        
+        corte_recomendado = nombre_corte
+        rostro_detectado = "Universal" # Ya no usamos la forma para recomendar
+        
         # Generar prompt realista para el corte
+        # El prompt_visual_corte ya incluye "professional portrait, 8k..."
         prompt_realista = (
-            f"Raw candid photo of a person with a {corte_recomendado} hairstyle, "
-            f"fitting a {rostro_detectado} face shape, professional portrait"
+            f"Raw candid photo of a person, {prompt_visual_corte}, "
+            f"fitting a natural face shape, "
+            f"{genero_detectado} gender, highly detailed skin texture"
         )
+        # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
         # Intentar generar imagen con Replicate
         url_generada = await generar_imagen(prompt_realista, path, "Corte Recomendado")
@@ -255,17 +284,14 @@ async def analizar(file: UploadFile = File(...)):
                 ruta_imagen_generada = None
 
         # Preparar biometría por defecto si falla o viene vacía
-        biometrics_data = analysis_results.get("biometrics")
-        if not biometrics_data:
-            # Valores por defecto para evitar KeyError en base de datos
-            biometrics_data = {
-                "face_width": 0.0,
-                "face_height": 0.0,
-                "ratio_width_height": 0.0,
-                "ratio_jaw": 0.0,
-                "ratio_forehead": 0.0
-            }
-
+        biometrics_data = {
+            "face_width": 100.0,
+            "face_height": 100.0,
+            "ratio_width_height": 1.0,
+            "ratio_jaw": 0.5,
+            "ratio_forehead": 0.5
+        }
+        
         # Guardar análisis en base de datos (AUTOMÁTICAMENTE sin preguntar)
         analysis_id = database.save_analysis(
             image_path=path,

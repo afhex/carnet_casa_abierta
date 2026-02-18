@@ -7,6 +7,7 @@ const selectedImage = ref(null);
 const analysisResults = ref(null);
 const isLoading = ref(false);
 const error = ref(null);
+const forzarMujer = ref(false);
 
 const handleImageSelected = async (file) => {
   selectedImage.value = file;
@@ -21,7 +22,16 @@ const analyzeImage = async (file) => {
   error.value = null;
 
   const formData = new FormData();
-  formData.append("file", file);
+
+  // LÓGICA DE EMERGENCIA
+  // Si el checkbox está marcado, renombramos el archivo al vuelo a 'manual_mujer.jpg'
+  // Si no, usamos el nombre original (ej: 'image.png' o 'captura.jpg')
+  const nombreFinal = forzarMujer.value
+    ? "override_manual_mujer.jpg"
+    : file.name;
+
+  // El 3er parámetro de append es el filename que verá Python
+  formData.append("file", file, nombreFinal);
 
   try {
     // Cambiar URL según tu servidor backend
@@ -65,6 +75,14 @@ const resetAnalysis = () => {
     <div class="content-wrapper">
       <!-- Mostrar componente de carga de imagen si no hay resultados -->
       <div v-if="!analysisResults" class="upload-section">
+        <!-- Control Modo Mujer -->
+        <button
+          @click="forzarMujer = !forzarMujer"
+          :class="['btn-modo-mujer', { activo: forzarMujer }]"
+        >
+          👩 Modo Mujer
+        </button>
+
         <ImageUpload
           @image-selected="handleImageSelected"
           :is-loading="isLoading"
@@ -160,6 +178,35 @@ const resetAnalysis = () => {
 .btn-new-analysis:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+.btn-modo-mujer {
+  display: block;
+  margin: 0 auto 1.5rem;
+  padding: 0.6rem 1.8rem;
+  background: rgba(255, 255, 255, 0.25);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 25px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+}
+
+.btn-modo-mujer:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.6);
+  transform: translateY(-2px);
+}
+
+.btn-modo-mujer.activo {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1e4c7a;
+  border-color: white;
+  font-weight: 700;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
 }
 
 @keyframes fadeIn {

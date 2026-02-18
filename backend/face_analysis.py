@@ -193,19 +193,46 @@ def analyze_image_properties(image_path):
 
     return results
 
+# LISTA MASCULINA (Estilos cortos, degradados y texturizados)
+CORTES_HOMBRE = [
+    ("Buzz Cut", "buzz cut hairstyle, extremely short military style, clean fade on sides, masculine look"),
+    ("Pompadour", "classic pompadour hairstyle, high volume slicked back hair on top, short faded sides"),
+    ("Modern Mullet", "modern mullet hairstyle, short hair on sides, long hair on the back, messy texture"),
+    ("Textured Crop", "textured crop hairstyle, short messy hair on top, straight fringe, high skin fade"),
+    ("Undercut", "undercut hairstyle, long hair on top slicked back, shaved sides, disconnection"),
+    ("Surfer Waves", "medium length wavy hair, surfer style, natural messy look, sun-kissed texture"),
+    ("Afro Fade", "short afro hairstyle, defined curls with skin fade on temples"),
+    ("Slick Back", "classic slick back hairstyle, gentleman look, shiny finish, combed back")
+]
+
+# LISTA FEMENINA (Estilos largos, capas y cortes estilizados)
+CORTES_MUJER = [
+    ("Long Layers", "long layered hairstyle, wavy texture, face framing layers, voluminous"),
+    ("Classic Bob", "classic chin-length bob hairstyle, straight sleek hair, sharp edges, modern chic"),
+    ("Pixie Cut", "short pixie cut hairstyle, feminine short hair, textured layers"),
+    ("Beach Waves", "long messy beach waves hairstyle, natural bohemian look, middle part"),
+    ("Messy Bun", "hair tied in a casual messy bun with loose strands and bangs"),
+    ("Straight & Sleek", "long straight silk hair, extremely shiny, middle part, ironed look"),
+    ("Curly Shag", "shag haircut with curly texture, volume, layers and fringe, retro style")
+]
+
 def get_haircut_recommendation(face_shape, gender="Male"):
     """
-    Retorna una recomendación de corte basada en la forma del rostro.
+    Retorna una recomendación de corte basada en el género.
+    Retorna una tupla: (nombre_corte, prompt_visual)
     """
-    recommendations = {
-        "Ovalado": ["Classic Quiff", "Pompadour", "Side Part", "Undercut"],
-        "Redondo": ["Textured Crop", "Faux Hawk", "High Fade", "Spiky Hair"],
-        "Diamante": ["Fringe", "Messy Waves", "Side Swept", "Longer Top"], 
-        "Desconocido": ["Modern Mullet", "Buzz Cut", "Messy Quiff"]
-    }
-    
-    # Seleccionar lista según forma
-    options = recommendations.get(face_shape, recommendations["Desconocido"])
-    
     import random
-    return random.choice(options)
+    
+    # Normalizar género (por si viene de mediapipe o string simple)
+    gender_lower = str(gender).lower()
+    
+    # Seleccionar lista según género
+    if "female" in gender_lower or "mujer" in gender_lower or "femenino" in gender_lower:
+        lista_cortes = CORTES_MUJER
+    else:
+        lista_cortes = CORTES_HOMBRE
+        
+    # Selección aleatoria de la lista maestra
+    nombre, prompt = random.choice(lista_cortes)
+    
+    return nombre, prompt
