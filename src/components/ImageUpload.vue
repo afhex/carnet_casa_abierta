@@ -1,131 +1,150 @@
 <script setup>
-import { ref, onUnmounted } from 'vue'
+import { ref, onUnmounted } from "vue";
 
 defineProps({
   isLoading: {
     type: Boolean,
-    default: false
-  }
-})
+    default: false,
+  },
+});
 
-const emit = defineEmits(['image-selected'])
+const emit = defineEmits(["image-selected"]);
 
-const fileInput = ref(null)
-const videoElement = ref(null)
-const canvasElement = ref(null)
-const previewImage = ref(null)
-const showCamera = ref(false)
-const cameraStream = ref(null)
-const cameraError = ref(null)
+const fileInput = ref(null);
+const videoElement = ref(null);
+const canvasElement = ref(null);
+const previewImage = ref(null);
+const showCamera = ref(false);
+const cameraStream = ref(null);
+const cameraError = ref(null);
 
 // Seleccionar archivo
 const triggerFileInput = () => {
-  fileInput.value?.click()
-}
+  fileInput.value?.click();
+};
 
 // Iniciar cámara
 const startCamera = async () => {
-  cameraError.value = null
+  cameraError.value = null;
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({
       video: {
-        facingMode: 'user',
+        facingMode: "user",
         width: { ideal: 1280 },
-        height: { ideal: 720 }
+        height: { ideal: 720 },
       },
-      audio: false
-    })
+      audio: false,
+    });
 
-    cameraStream.value = stream
-    showCamera.value = true
+    cameraStream.value = stream;
+    showCamera.value = true;
 
     // Esperar a que el elemento video esté montado
     setTimeout(() => {
       if (videoElement.value) {
-        videoElement.value.srcObject = stream
+        videoElement.value.srcObject = stream;
       }
-    }, 100)
+    }, 100);
   } catch (err) {
-    cameraError.value = `Error al acceder a la cámara: ${err.message}`
-    console.error('Error accessing camera:', err)
+    cameraError.value = `Error al acceder a la cámara: ${err.message}`;
+    console.error("Error accessing camera:", err);
   }
-}
+};
 
 // Capturar foto
 const capturePhoto = () => {
-  if (!videoElement.value || !canvasElement.value) return
+  if (!videoElement.value || !canvasElement.value) return;
 
-  const context = canvasElement.value.getContext('2d')
-  canvasElement.value.width = videoElement.value.videoWidth
-  canvasElement.value.height = videoElement.value.videoHeight
+  const context = canvasElement.value.getContext("2d");
+  canvasElement.value.width = videoElement.value.videoWidth;
+  canvasElement.value.height = videoElement.value.videoHeight;
 
   // Espejo (flip) de la cámara frontal
-  context.translate(canvasElement.value.width, 0)
-  context.scale(-1, 1)
+  context.translate(canvasElement.value.width, 0);
+  context.scale(-1, 1);
 
   // Dibujar video en canvas
-  context.drawImage(videoElement.value, 0, 0)
+  context.drawImage(videoElement.value, 0, 0);
 
   // Obtener imagen del canvas
-  canvasElement.value.toBlob((blob) => {
-    if (blob) {
-      const file = new File([blob], 'camera-capture.jpg', { type: 'image/jpeg' })
-      processImage(file)
-      stopCamera()
-    }
-  }, 'image/jpeg', 0.95)
-}
+  canvasElement.value.toBlob(
+    (blob) => {
+      if (blob) {
+        const file = new File([blob], "camera-capture.jpg", {
+          type: "image/jpeg",
+        });
+        processImage(file);
+        stopCamera();
+      }
+    },
+    "image/jpeg",
+    0.95,
+  );
+};
 
 // Procesar imagen
 const processImage = (file) => {
-  const reader = new FileReader()
+  const reader = new FileReader();
   reader.onload = (e) => {
-    previewImage.value = e.target?.result
-  }
-  reader.readAsDataURL(file)
+    previewImage.value = e.target?.result;
+  };
+  reader.readAsDataURL(file);
 
-  emit('image-selected', file)
-}
+  emit("image-selected", file);
+};
 
 // Manejar cambio de archivo
 const handleFileChange = (event) => {
-  const file = event.target.files?.[0]
-  if (file && file.type.startsWith('image/')) {
-    processImage(file)
+  const file = event.target.files?.[0];
+  if (file && file.type.startsWith("image/")) {
+    processImage(file);
   }
-}
+};
 
 // Detener cámara
 const stopCamera = () => {
   if (cameraStream.value) {
-    cameraStream.value.getTracks().forEach(track => track.stop())
-    cameraStream.value = null
+    cameraStream.value.getTracks().forEach((track) => track.stop());
+    cameraStream.value = null;
   }
-  showCamera.value = false
-  cameraError.value = null
-}
+  showCamera.value = false;
+  cameraError.value = null;
+};
 
 // Cancelar cámara
 const cancelCamera = () => {
-  stopCamera()
-  previewImage.value = null
-}
+  stopCamera();
+  previewImage.value = null;
+};
 
 // Limpiar al desmontar
 onUnmounted(() => {
-  stopCamera()
-})
+  stopCamera();
+});
 </script>
 
 <template>
   <div class="upload-container">
     <!-- Preview de imagen capturada -->
     <div v-if="previewImage" class="preview-section">
-      <img :src="previewImage" alt="Preview" class="preview-image">
-      <button @click="previewImage = null" class="btn-reset">
-        ↻ Capturar otra foto
-      </button>
+      <img :src="previewImage" alt="Preview" class="preview-image" />
+
+      <div class="actions-container">
+        <button
+          @click="previewImage = null"
+          class="btn-reset"
+          :disabled="isLoading"
+        >
+          ↻ Capturar otra foto
+        </button>
+
+        <!-- Indicador de carga integrado -->
+        <div v-if="isLoading" class="loading-indicator">
+          <div class="spinner-small"></div>
+          <p>Analizando tu rostro...</p>
+        </div>
+      </div>
     </div>
 
     <!-- Vista de cámara activa -->
@@ -145,7 +164,7 @@ onUnmounted(() => {
             <div class="inner-ring"></div>
             <div class="outer-ring"></div>
           </div>
-          
+
           <!-- Esquinas tecnológicas -->
           <div class="tech-corners">
             <div class="corner top-left"></div>
@@ -160,18 +179,24 @@ onUnmounted(() => {
 
       <!-- Controles de cámara -->
       <div class="camera-controls">
-        <button @click="capturePhoto" class="btn btn-capture" title="Capturar foto">
+        <button
+          @click="capturePhoto"
+          class="btn btn-capture"
+          title="Capturar foto"
+        >
           📸 Capturar
         </button>
-        <button @click="cancelCamera" class="btn btn-cancel" title="Cerrar cámara">
+        <button
+          @click="cancelCamera"
+          class="btn btn-cancel"
+          title="Cerrar cámara"
+        >
           ✕ Cancelar
         </button>
       </div>
 
       <!-- Mostrar error si hay -->
-      <div v-if="cameraError" class="error-message">
-        ⚠️ {{ cameraError }}
-      </div>
+      <div v-if="cameraError" class="error-message">⚠️ {{ cameraError }}</div>
     </div>
 
     <!-- Área de carga principal -->
@@ -198,14 +223,12 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <p class="info-text">
-          Soportamos: JPG, PNG, WebP
-        </p>
+        <p class="info-text">Soportamos: JPG, PNG, WebP</p>
       </div>
     </div>
 
     <!-- Canvas oculto para captura -->
-    <canvas ref="canvasElement" style="display: none;"></canvas>
+    <canvas ref="canvasElement" style="display: none"></canvas>
 
     <!-- Input oculto para archivo -->
     <input
@@ -224,6 +247,10 @@ onUnmounted(() => {
 }
 
 .preview-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   padding: 2rem;
   animation: fadeIn 0.6s ease;
@@ -253,6 +280,50 @@ onUnmounted(() => {
   background-color: #5568d3;
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-reset:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.actions-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto;
+  gap: 1.5rem;
+}
+
+.loading-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  gap: 0.8rem;
+  color: white;
+  text-align: center;
+  animation: fadeIn 0.4s ease;
+}
+
+.spinner-small {
+  width: 30px;
+  height: 30px;
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Camera Section */
@@ -287,7 +358,7 @@ onUnmounted(() => {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  background: radial-gradient(circle, transparent 30%, rgba(0,0,0,0.5) 80%);
+  background: radial-gradient(circle, transparent 30%, rgba(0, 0, 0, 0.5) 80%);
 }
 
 /* --- EFECTOS FUTURISTAS --- */
@@ -299,11 +370,14 @@ onUnmounted(() => {
   position: relative;
   border: 2px solid rgba(0, 255, 255, 0.3);
   border-radius: 50% 50% 45% 45%; /* Forma de rostro */
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.2), inset 0 0 20px rgba(0, 255, 255, 0.1);
+  box-shadow:
+    0 0 20px rgba(0, 255, 255, 0.2),
+    inset 0 0 20px rgba(0, 255, 255, 0.1);
 }
 
 /* Anillos Giratorios */
-.inner-ring, .outer-ring {
+.inner-ring,
+.outer-ring {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -354,16 +428,36 @@ onUnmounted(() => {
   filter: drop-shadow(0 0 5px rgba(0, 255, 255, 0.5));
 }
 
-.top-left { top: 0; left: 0; border-right: none; border-bottom: none; }
-.top-right { top: 0; right: 0; border-left: none; border-bottom: none; }
-.bottom-left { bottom: 0; left: 0; border-right: none; border-top: none; }
-.bottom-right { bottom: 0; right: 0; border-left: none; border-top: none; }
+.top-left {
+  top: 0;
+  left: 0;
+  border-right: none;
+  border-bottom: none;
+}
+.top-right {
+  top: 0;
+  right: 0;
+  border-left: none;
+  border-bottom: none;
+}
+.bottom-left {
+  bottom: 0;
+  left: 0;
+  border-right: none;
+  border-top: none;
+}
+.bottom-right {
+  bottom: 0;
+  right: 0;
+  border-left: none;
+  border-top: none;
+}
 
 /* Texto de Estado */
 .status-text {
   color: #00ffff;
   margin-top: 1.5rem;
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-weight: bold;
   font-size: 0.9rem;
   letter-spacing: 2px;
@@ -383,7 +477,7 @@ onUnmounted(() => {
 }
 
 .btn-capture {
-  background-color: #4CAF50;
+  background-color: #4caf50;
   color: white;
   padding: 0.9rem 2rem;
   font-size: 1rem;
@@ -430,32 +524,42 @@ onUnmounted(() => {
 
 /* Upload Area */
 .upload-area {
-  padding: 2rem;
+  padding: 1rem;
 }
 
 .upload-box {
   background: white;
-  border-radius: 16px;
-  padding: 3rem 2rem;
+  border-radius: 18px;
+  padding: 2.6rem 2.4rem 2.2rem;
   text-align: center;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 16px 40px rgba(9, 30, 66, 0.18);
   animation: slideUp 0.6s ease;
+  border: 1px solid rgba(15, 39, 66, 0.08);
 }
 
 .icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 1.2rem;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  color: #1e4c7a;
+  background: #eef4fb;
+  border-radius: 12px;
+  border: 1px solid #d7e6f8;
 }
 
 .upload-box h2 {
-  color: #333;
-  margin-bottom: 0.5rem;
-  font-size: 1.8rem;
+  color: #0f2742;
+  margin-bottom: 0.6rem;
+  font-size: 1.7rem;
+  font-weight: 700;
 }
 
 .upload-box p {
-  color: #666;
-  margin-bottom: 2rem;
+  color: #5b6b7a;
+  margin-bottom: 1.8rem;
   font-size: 0.95rem;
 }
 
@@ -468,11 +572,11 @@ onUnmounted(() => {
 }
 
 .btn {
-  padding: 0.8rem 1.5rem;
+  padding: 0.7rem 1.4rem;
   border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  font-weight: 600;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.3s ease;
   min-width: 160px;
@@ -484,32 +588,33 @@ onUnmounted(() => {
 }
 
 .btn-primary {
-  background-color: #8b5a2b;
+  background-color: #1e4c7a;
   color: white;
+  box-shadow: 0 8px 18px rgba(30, 76, 122, 0.25);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background-color: #6b431f;
+  background-color: #173e64;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(139, 90, 43, 0.4);
+  box-shadow: 0 12px 24px rgba(30, 76, 122, 0.3);
 }
 
 .btn-secondary {
   background-color: white;
-  color: #8b5a2b;
-  border: 2px solid #8b5a2b;
+  color: #1e4c7a;
+  border: 1px solid #9fc0e4;
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background-color: #faf5f0;
+  background-color: #eef4fb;
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(139, 90, 43, 0.2);
+  box-shadow: 0 8px 16px rgba(30, 76, 122, 0.15);
 }
 
 .info-text {
-  font-size: 0.85rem;
-  color: #999;
-  margin-top: 1rem;
+  font-size: 0.82rem;
+  color: #6f7f90;
+  margin-top: 0.9rem;
 }
 
 @keyframes slideUp {
@@ -533,25 +638,44 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  from { transform: translate(-50%, -50%) rotate(0deg); }
-  to { transform: translate(-50%, -50%) rotate(360deg); }
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
 }
 
 @keyframes scan {
-  0% { top: 10%; opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { top: 90%; opacity: 0; }
+  0% {
+    top: 10%;
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    top: 90%;
+    opacity: 0;
+  }
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.6; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }
 
 @media (max-width: 768px) {
   .upload-box {
-    padding: 2rem 1.5rem;
+    padding: 2.2rem 1.6rem;
   }
 
   .button-group {
@@ -567,7 +691,7 @@ onUnmounted(() => {
   }
 
   .upload-box h2 {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .camera-container {
