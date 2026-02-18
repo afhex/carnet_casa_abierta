@@ -83,12 +83,6 @@ const resetAnalysis = () => {
           Nuevo Análisis
         </button>
       </div>
-
-      <!-- Indicador de carga -->
-      <div v-if="isLoading" class="loading-section">
-        <div class="spinner"></div>
-        <p>Analizando tu rostro...</p>
-      </div>
     </div>
   </main>
 </template>
