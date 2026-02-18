@@ -184,6 +184,28 @@ const comenzarDeNuevo = () => {
             </button>
             <p v-else class="placeholder-msg">Imagen en generación...</p>
           </div>
+
+          <!-- Imagen del corte gracioso -->
+          <div v-if="props.results.imagen_graciosa_url" class="generated-card">
+            <div class="card-badge funny-badge">¡Diversión!</div>
+            <div class="image-wrapper">
+              <img
+                :src="props.results.imagen_graciosa_url"
+                alt="Corte gracioso"
+                class="generated-image"
+              />
+            </div>
+            <h4>{{ props.results.corte_gracioso_nombre }}</h4>
+            <p class="card-description">
+              Una opción arriesgada... ¿Te atreves? 🤪
+            </p>
+             <button 
+              @click="downloadImage(props.results.imagen_graciosa_url, 'Gracioso')" 
+              class="btn-download btn-download-small">
+              ⬇️ Guardar Recuerdo
+            </button>
+          </div>
+
         </div>
       </div>
 

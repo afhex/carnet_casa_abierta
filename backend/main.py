@@ -203,6 +203,28 @@ async def analizar(file: UploadFile = File(...)):
 
         # Intentar generar imagen con Replicate
         url_generada = await generar_imagen(prompt_realista, path, "Corte Recomendado")
+        
+        # --- Lógica de Corte Gracioso ---
+        cortes_alternativos = [
+            "Completely Bald Head",
+            "Crazy Einstein Hair",
+            "Bright Neon Green Mohawk",
+            "Clown Wig with red nose",
+            "Historical Powdered Wig",
+            "Spaghetti Hair",
+            "Super Saiyan Hair"
+        ]
+        import random
+        corte_alternativo = random.choice(cortes_alternativos)
+        
+        prompt_alternativo = (
+            f"Hilarious and funny photo of a person with a {corte_alternativo}, "
+            f"exaggerated and ridiculous style, comedic expression"
+        )
+        
+        url_generada_graciosa = await generar_imagen(prompt_alternativo, path, "Corte Gracioso")
+        # --------------------------------
+
         ruta_imagen_generada = None
         
         if url_generada:
@@ -232,11 +254,23 @@ async def analizar(file: UploadFile = File(...)):
                 print(f"❌ Error creando placeholder: {e}")
                 ruta_imagen_generada = None
 
+        # Preparar biometría por defecto si falla o viene vacía
+        biometrics_data = analysis_results.get("biometrics")
+        if not biometrics_data:
+            # Valores por defecto para evitar KeyError en base de datos
+            biometrics_data = {
+                "face_width": 0.0,
+                "face_height": 0.0,
+                "ratio_width_height": 0.0,
+                "ratio_jaw": 0.0,
+                "ratio_forehead": 0.0
+            }
+
         # Guardar análisis en base de datos (AUTOMÁTICAMENTE sin preguntar)
         analysis_id = database.save_analysis(
             image_path=path,
             face_shape=rostro_detectado,
-            biometrics=analysis_results.get("biometrics", {}),
+            biometrics=biometrics_data,
             gender=genero_detectado,
             generated_image_path=ruta_imagen_generada,
             haircut_recommendation=corte_recomendado,
@@ -254,8 +288,10 @@ async def analizar(file: UploadFile = File(...)):
                 "genero_detectado": genero_detectado,
                 "imagen_original_path": path,
                 "imagen_generada_path": ruta_imagen_generada,
-                "biometrics": analysis_results.get("biometrics", {}),
-                "telemetria": analysis_results.get("biometrics", {})
+                "imagen_graciosa_url": url_generada_graciosa,
+                "corte_gracioso_nombre": corte_alternativo,
+                "biometrics": biometrics_data,
+                "telemetria": biometrics_data
             }
         }
         

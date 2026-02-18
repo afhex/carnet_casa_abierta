@@ -1,54 +1,63 @@
 <script setup>
-import { ref } from 'vue'
-import ImageUpload from '../components/ImageUpload.vue'
-import AnalysisResults from '../components/AnalysisResults.vue'
+import { ref } from "vue";
+import ImageUpload from "../components/ImageUpload.vue";
+import AnalysisResults from "../components/AnalysisResults.vue";
 
-const selectedImage = ref(null)
-const analysisResults = ref(null)
-const isLoading = ref(false)
-const error = ref(null)
+const selectedImage = ref(null);
+const analysisResults = ref(null);
+const isLoading = ref(false);
+const error = ref(null);
 
 const handleImageSelected = async (file) => {
-  selectedImage.value = file
-  error.value = null
+  selectedImage.value = file;
+  error.value = null;
 
   // Enviar al backend para análisis
-  await analyzeImage(file)
-}
+  await analyzeImage(file);
+};
 
 const analyzeImage = async (file) => {
-  isLoading.value = true
-  error.value = null
+  isLoading.value = true;
+  error.value = null;
 
-  const formData = new FormData()
-  formData.append('file', file)
+  const formData = new FormData();
+  formData.append("file", file);
 
   try {
     // Cambiar URL según tu servidor backend
-    const response = await fetch('http://localhost:8000/analizar', {
-      method: 'POST',
+    const response = await fetch("http://localhost:8000/analizar", {
+      method: "POST",
       body: formData,
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Error: ${response.status}`)
+      let errorMessage = `Error: ${response.status}`;
+      try {
+        const errorData = await response.json();
+        if (errorData && errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } catch (e) {
+        // Si no se puede parsear JSON, usar status por defecto
+      }
+      throw new Error(errorMessage);
     }
 
-    const data = await response.json()
-    analysisResults.value = data.datos
+    const data = await response.json();
+    analysisResults.value = data.datos;
   } catch (err) {
-    error.value = `Error al analizar: ${err.message}`
-    console.error('Error:', err)
+    error.value = `Error al analizar: ${err.message}`;
+    console.error("Error:", err);
   } finally {
-    isLoading.value = false
+    isLoading.value = false;
   }
-}
+};
 
 const resetAnalysis = () => {
-  selectedImage.value = null
-  analysisResults.value = null
-  error.value = null
-}
+  selectedImage.value = null;
+  analysisResults.value = null;
+  error.value = null;
+};
 </script>
 
 <template>
@@ -69,10 +78,7 @@ const resetAnalysis = () => {
 
       <!-- Mostrar resultados si los hay -->
       <div v-if="analysisResults && !isLoading" class="results-section">
-        <AnalysisResults
-          :results="analysisResults"
-          :image="selectedImage"
-        />
+        <AnalysisResults :results="analysisResults" :image="selectedImage" />
         <button @click="resetAnalysis" class="btn-new-analysis">
           Nuevo Análisis
         </button>
@@ -90,7 +96,13 @@ const resetAnalysis = () => {
 <style scoped>
 .home-container {
   min-height: calc(100vh - 140px);
-  background: linear-gradient(120deg, #1f6fb2 0%, #2e7cc4 40%, #c07a33 75%, #e6a354 100%);
+  background: linear-gradient(
+    120deg,
+    #1f6fb2 0%,
+    #2e7cc4 40%,
+    #c07a33 75%,
+    #e6a354 100%
+  );
   display: flex;
   align-items: center;
   justify-content: center;
