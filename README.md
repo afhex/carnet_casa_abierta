@@ -1,158 +1,119 @@
-# 💇‍♂️ Casa Abierta - Análisis Biométrico de Cortes de Cabello
+# 💇‍♂️ Casa Abierta - Manual del Programador (v1.0)
 
-Aplicación fullstack que utiliza análisis biométrico de IA para recomendar cortes de cabello personalizados basados en la forma del rostro del usuario.
-
----
-
-## 🎯 Características
-
-- ✅ **Análisis biométrico** en tiempo real del tipo de rostro
-- ✅ **Recomendaciones inteligentes** de cortes basadas en geometría facial
-- ✅ **Interfaz moderna** y responsiva con Vue 3
-- ✅ **API RESTful** robusta con FastAPI
-- ✅ **Persistencia local** segura de datos
-- ✅ **Generación de QR** para compartir resultados
+Bienvenido al Manual del Programador de **Casa Abierta**, una plataforma fullstack de análisis biométrico que utiliza Inteligencia Artificial para recomendar cortes de cabello personalizados.
 
 ---
 
-## 🛠️ Stack Tecnológico
+## 🏗️ Arquitectura del Sistema
 
-### Frontend
-- **Vue 3** - Framework reactivo
-- **Vite** - Build tool rápido
-- **Vue Router** - Navegación SPA
-- **Tailwind CSS** - Estilos modernos
+El proyecto sigue una arquitectura **Client-Server** desacoplada:
 
-### Backend
-- **Python 3.x** - Lenguaje base
-- **FastAPI** - API de alto rendimiento
-- **Pillow** - Procesamiento de imágenes
+- **Frontend:** SPA construida con Vue 3, Vite y Tailwind CSS. Se encarga de la captura de imágenes (cámara/upload) y visualización de resultados dinámicos.
+- **Backend:** API RESTful con FastAPI (Python). Gestiona la lógica pesada de IA, generación de imágenes con Replicate API, persistencia en SQLite y generación de carnets PDF.
 
 ---
 
-## 📋 Requisitos Previos
+## 🧠 Lógica del Backend (Deep Dive)
 
-- **Node.js** 20.19.0 o superior
-- **Python** 3.10+
-- **npm** o **yarn**
+### 1. Punto de Entrada (`main.py`)
+
+Centraliza los endpoints y coordina los servicios.
+
+- `POST /analizar`: El flujo principal. Recibe la imagen, invoca `detectar_caracteristicas`, llama a Replicate para la imagen recomendada y guarda todo en la DB.
+- `POST /generar-carnet`: Toma un `analysis_id` y genera un PDF usando `generar_carnets.py`.
+- `GET /historial`: Retorna los análisis previos paginados.
+
+### 2. Análisis Facil (`analisis_facial.py`)
+
+Utiliza la librería **DeepFace** para extraer:
+
+- **Género**: Identificación automática (con override manual mediante el nombre de archivo).
+- **Emoción**: Detección de estado de ánimo actual.
+- **Geometría**: Medidas de ratios faciales para recomendaciones.
+
+### 3. Generación de Imágenes (IA)
+
+Integración con **Replicate API** usando el modelo `ip-adapter` para mantener la identidad del usuario mientras se aplica el nuevo estilo de cabello.
+
+- **Prompt Engineering**: Se construyen prompts dinámicos basados en el género y el corte seleccionado.
 
 ---
 
-## 🚀 Instalación Rápida
+## 💾 Persistencia de Datos
 
-### Frontend
+Sistema basado en **SQLite** para simplicidad y portabilidad.
+
+### Tabla: `biometric_analyses`
+
+| Columna                  | Tipo     | Descripción                             |
+| ------------------------ | -------- | --------------------------------------- |
+| `id`                     | INT      | Clave primaria autoincremental          |
+| `image_path`             | TEXT     | Ruta a la foto original capturada       |
+| `face_shape`             | TEXT     | Forma del rostro detectada              |
+| `gender`                 | TEXT     | Género detectado o forzado              |
+| `haircut_recommendation` | TEXT     | Nombre del corte sugerido               |
+| `generated_image_path`   | TEXT     | Ruta local a la imagen procesada por IA |
+| `timestamp`              | DATETIME | Fecha y hora del análisis               |
+
+---
+
+## 🎨 Arquitectura del Frontend
+
+### Componentes Clave (`src/components/`)
+
+1. **`ImageUpload.vue`**: Gestiona el flujo de entrada (File API y acceso a cámara).
+2. **`AnalysisResults.vue`**: Orquestador visual que muestra telemetría, imagen IA, QR de descarga y botón para carnet.
+
+### Flujo de Datos
+
+- **Vue Refs**: Se utiliza estado reactivo local en `HomeView.vue` para manejar el ciclo de vida del análisis (Loading -> Success -> Error).
+- **Modo Mujer (Emergency Override)**: Si se activa, se renombra el archivo enviado al backend para forzar la detección femenina.
+
+---
+
+## 🛠️ Configuración y Despliegue
+
+### Requisitos
+
+- Node.js 20+
+- Python 3.10+
+
+### Variables de Env (`backend/.env`)
 
 ```bash
-# Instalar dependencias
-npm install
-
-# Ejecutar servidor de desarrollo
-npm run dev
-
-# Compilar para producción
-npm run build
+REPLICATE_API_TOKEN=tu_token_aqui
 ```
 
-### Backend
+### Ejecución
 
 ```bash
-# Instalar dependencias
-pip install -r backend/requirements.txt
+# Frontend
+npm install && npm run dev
 
-# Ejecutar servidor
-cd backend
-python main.py
-
-# El backend estará disponible en http://localhost:8000
+# Backend
+cd backend && python main.py
 ```
 
 ---
 
-## 📱 Uso
+## 🤝 Extensibilidad
 
-1. **Abrir Frontend:** Navega a `http://localhost:5173`
-2. **Cargar imagen:** Sube una foto del rostro o usa la cámara
-3. **Esperar análisis:** El sistema analiza la forma del rostro
-4. **Ver resultados:** Obtén recomendaciones de cortes personalizadas
-5. **Compartir:** Genera un QR para compartir resultados
+Para agregar nuevos cortes:
 
----
+1. Modificar `analisis_facial.py` -> función `seleccionar_corte`.
+2. Añadir el nuevo estilo al diccionario de prompts.
 
-## 📁 Estructura del Proyecto
+Para modificar el carnet:
 
-```
-.
-├── src/                    # Frontend (Vue 3)
-│   ├── components/         # Componentes reutilizables
-│   ├── views/              # Páginas principales
-│   ├── assets/             # CSS y recursos
-│   └── router/             # Configuración de rutas
-├── backend/                # Backend (Python/FastAPI)
-│   ├── main.py             # Lógica principal de API
-│   ├── face_analysis.py    # Análisis biométrico
-│   ├── database.py         # Persistencia de datos
-│   └── requirements.txt    # Dependencias Python
-├── public/                 # Archivos estáticos
-└── package.json            # Configuración de dependencias
-```
+1. Editar `backend/templates/carnet_template.png`.
+2. Ajustar coordenadas en `backend/generar_carnets.py`.
 
 ---
 
-## 🔌 API Endpoints
+## 👤 Equipo de Desarrollo
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `GET` | `/` | Health check |
-| `POST` | `/analizar` | Análisis de imagen |
-| `GET` | `/historial` | Histórico paginado |
-| `GET` | `/analisis/{id}` | Análisis específico |
+**Carrera:** Inteligencia Artificial  
+**Semestre:** 4to  
+**Proyecto:** Casa Abierta 2026
 
----
-
-## 🔒 Seguridad
-
-- Datos almacenados **localmente** (sin servicio cloud)
-- CORS configurado para **desarrollo local**
-- Tokens sensibles en **variables de entorno**
-- Carpetas de datos excluidas del repositorio
-
----
-
-## 📊 Documentación Técnica
-
-- [Backend Report](./REPORTE_BACKEND.md) - Detalles técnicos del servidor
-- [Frontend Report](./REPORTE_FRONTEND.md) - Detalles de la interfaz
-
----
-
-## 🤝 Contribuir
-
-Este proyecto es parte del currículo académico. Para mejoras:
-
-1. Crear rama feature (`git checkout -b feature/mejora`)
-2. Commit cambios (`git commit -m 'Add feature'`)
-3. Push (`git push origin feature/mejora`)
-4. Abrir Pull Request
-
----
-
-## 📄 Licencia
-
-Proyecto académico 2026 - Instituto Técnico Superior
-
----
-
-## 👤 Autores - Estudiantes de Sistemas y Gestión de Data
-
-Carrera: Inteligencia Artificial  
-Semestre: 4
-
----
-
-## 📞 Soporte
-
-Para reportar bugs o solicitar features, abre un issue en el repositorio.
-
----
-
-**Última actualización:** 6 de Febrero, 2026
+**Última actualización:** 23 de Febrero, 2026
